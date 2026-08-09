@@ -54,7 +54,7 @@ router.get("/", (req, res) => {
    ADD PRODUCT
 ========================================================= */
 
-router.post("/", (req, res) => {
+router.post("/", async (req, res) => {
   const {
     category,
     categorySinhala,
@@ -107,53 +107,117 @@ router.post("/", (req, res) => {
     });
   }
 
-  db.beginTransaction((transactionError) => {
-    if (transactionError) {
-      return res.status(500).json({
-        success: false,
-        message: "Unable to start database transaction.",
-        error: transactionError.message,
-      });
+  let connection;
+
+  try {
+    connection = await db.promise().getConnection();
+
+    await connection.beginTransaction();
+
+    const [productResult] = await connection.query(
+      `
+        INSERT INTO products (
+          name,
+          category,
+          category_sinhala,
+          size,
+          invoice,
+          expiry,
+          received,
+          balance,
+          minimum_stock,
+          unit_price
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `,
+      [
+        productName.trim(),
+        category,
+        categorySinhala || category,
+        size.trim(),
+        invoiceNumber.trim(),
+        expiryDate,
+        quantity,
+        quantity,
+        minimumStock,
+        price,
+      ]
+    );
+
+    const productId = productResult.insertId;
+
+    const [activityResult] = await connection.query(
+      `
+        INSERT INTO activities (
+          type,
+          product_id,
+          product_name,
+          size,
+          quantity,
+          balance,
+          message
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+      `,
+      [
+        "product-added",
+        productId,
+        productName.trim(),
+        size.trim(),
+        quantity,
+        quantity,
+        `Added ${productName.trim()} ${size.trim()}`,
+      ]
+    );
+
+    await connection.commit();
+
+    return res.status(201).json({
+      success: true,
+      message: `${productName.trim()} ${size.trim()} added successfully.`,
+
+      product: {
+        id: productId,
+        name: productName.trim(),
+        category,
+        categorySinhala:
+          categorySinhala || category,
+        size: size.trim(),
+        invoice: invoiceNumber.trim(),
+        expiry: expiryDate,
+        received: quantity,
+        balance: quantity,
+        minimum: minimumStock,
+        unitPrice: price,
+        createdAt: new Date().toISOString(),
+      },
+
+      activity: {
+        id: activityResult.insertId,
+        type: "product-added",
+        productId,
+        productName: productName.trim(),
+        size: size.trim(),
+        quantity,
+        balance: quantity,
+        createdAt: new Date().toISOString(),
+      },
+    });
+  } catch (error) {
+    if (connection) {
+      try {
+        await connection.rollback();
+      } catch (rollbackError) {
+        console.error(
+          "Add product rollback failed:",
+          rollbackError.message
+        );
+      }
     }
 
-    const productSql = `
-      INSERT INTO products (
-        name,
-        category,
-        category_sinhala,
-        size,
-        invoice,
-        expiry,
-        received,
-        balance,
-        minimum_stock,
-        unit_price
-      )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `;
-
-    const productValues = [
-      productName.trim(),
-      category,
-      categorySinhala || category,
-      size.trim(),
-      invoiceNumber.trim(),
-      expiryDate,
-      quantity,
-      quantity,
-      minimumStock,
-      price,
-    ];
-
-    db.query(
-      productSql,
-      productValues,
-      (productError, productResult) => {
-        if (productError) {
-  return db.rollback(() => {
     if (
-      productError.code === "ER_DUP_ENTRY" ||
-      productError.errno === 1062
+      error.code === "ER_DUP_ENTRY" ||
+      error.errno === 1062
     ) {
       return res.status(409).json({
         success: false,
@@ -162,99 +226,25 @@ router.post("/", (req, res) => {
       });
     }
 
+    console.error("Add product error:", error);
+
     return res.status(500).json({
       success: false,
       message: "Unable to save the product.",
-      error: productError.message,
+      error: error.message,
     });
-  });
-}
-
-        const productId = productResult.insertId;
-
-        const activitySql = `
-          INSERT INTO activities (
-            type,
-            product_id,
-            product_name,
-            size,
-            quantity,
-            balance,
-            message
-          )
-          VALUES (?, ?, ?, ?, ?, ?, ?)
-        `;
-
-        const activityValues = [
-          "product-added",
-          productId,
-          productName.trim(),
-          size.trim(),
-          quantity,
-          quantity,
-          `Added ${productName.trim()} ${size.trim()}`,
-        ];
-
-        db.query(
-          activitySql,
-          activityValues,
-          (activityError) => {
-            if (activityError) {
-              return db.rollback(() => {
-                res.status(500).json({
-                  success: false,
-                  message:
-                    "Product activity could not be saved.",
-                  error: activityError.message,
-                });
-              });
-            }
-
-            db.commit((commitError) => {
-              if (commitError) {
-                return db.rollback(() => {
-                  res.status(500).json({
-                    success: false,
-                    message:
-                      "Product transaction could not be completed.",
-                    error: commitError.message,
-                  });
-                });
-              }
-
-              return res.status(201).json({
-                success: true,
-                message: `${productName.trim()} ${size.trim()} added successfully.`,
-
-                product: {
-                  id: productId,
-                  name: productName.trim(),
-                  category,
-                  categorySinhala:
-                    categorySinhala || category,
-                  size: size.trim(),
-                  invoice: invoiceNumber.trim(),
-                  expiry: expiryDate,
-                  received: quantity,
-                  balance: quantity,
-                  minimum: minimumStock,
-                  unitPrice: price,
-                  createdAt: new Date().toISOString(),
-                },
-              });
-            });
-          }
-        );
-      }
-    );
-  });
+  } finally {
+    if (connection) {
+      connection.release();
+    }
+  }
 });
 
 /* =========================================================
    SELL PRODUCT / UPDATE STOCK
 ========================================================= */
 
-router.patch("/:id/sell", (req, res) => {
+router.patch("/:id/sell", async (req, res) => {
   const productId = Number(req.params.id);
   const soldQuantity = Number(req.body.soldQuantity);
 
@@ -276,170 +266,139 @@ router.patch("/:id/sell", (req, res) => {
     });
   }
 
-  db.beginTransaction((transactionError) => {
-    if (transactionError) {
-      return res.status(500).json({
+  let connection;
+
+  try {
+    connection = await db.promise().getConnection();
+
+    await connection.beginTransaction();
+
+    const [results] = await connection.query(
+      `
+        SELECT
+          id,
+          name,
+          size,
+          balance
+        FROM products
+        WHERE id = ?
+        FOR UPDATE
+      `,
+      [productId]
+    );
+
+    if (results.length === 0) {
+      await connection.rollback();
+
+      return res.status(404).json({
         success: false,
-        message: "Unable to start stock transaction.",
-        error: transactionError.message,
+        message: "Product could not be found.",
       });
     }
 
-    const selectSql = `
-      SELECT
-        id,
-        name,
-        size,
-        balance
-      FROM products
-      WHERE id = ?
-      FOR UPDATE
-    `;
+    const product = results[0];
 
-    db.query(
-      selectSql,
-      [productId],
-      (selectError, results) => {
-        if (selectError) {
-          return db.rollback(() => {
-            res.status(500).json({
-              success: false,
-              message: "Unable to find the product.",
-              error: selectError.message,
-            });
-          });
-        }
+    const currentBalance = Number(
+      product.balance || 0
+    );
 
-        if (results.length === 0) {
-          return db.rollback(() => {
-            res.status(404).json({
-              success: false,
-              message: "Product could not be found.",
-            });
-          });
-        }
+    if (soldQuantity > currentBalance) {
+      await connection.rollback();
 
-        const product = results[0];
-        const currentBalance = Number(
-          product.balance || 0
-        );
+      return res.status(400).json({
+        success: false,
+        message:
+          "Sold quantity cannot exceed the current balance.",
+      });
+    }
 
-        if (soldQuantity > currentBalance) {
-          return db.rollback(() => {
-            res.status(400).json({
-              success: false,
-              message:
-                "Sold quantity cannot exceed the current balance.",
-            });
-          });
-        }
+    const newBalance =
+      currentBalance - soldQuantity;
 
-        const newBalance =
-          currentBalance - soldQuantity;
+    await connection.query(
+      `
+        UPDATE products
+        SET balance = ?
+        WHERE id = ?
+      `,
+      [newBalance, productId]
+    );
 
-        const updateSql = `
-          UPDATE products
-          SET balance = ?
-          WHERE id = ?
-        `;
+    const [activityResult] = await connection.query(
+      `
+        INSERT INTO activities (
+          type,
+          product_id,
+          product_name,
+          size,
+          quantity,
+          balance,
+          message
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+      `,
+      [
+        "stock-updated",
+        productId,
+        product.name,
+        product.size,
+        soldQuantity,
+        newBalance,
+        `Sold ${soldQuantity} units of ${product.name} ${product.size}`,
+      ]
+    );
 
-        db.query(
-          updateSql,
-          [newBalance, productId],
-          (updateError) => {
-            if (updateError) {
-              return db.rollback(() => {
-                res.status(500).json({
-                  success: false,
-                  message:
-                    "Unable to update the stock balance.",
-                  error: updateError.message,
-                });
-              });
-            }
+    await connection.commit();
 
-            const activitySql = `
-              INSERT INTO activities (
-                type,
-                product_id,
-                product_name,
-                size,
-                quantity,
-                balance,
-                message
-              )
-              VALUES (?, ?, ?, ?, ?, ?, ?)
-            `;
+    return res.json({
+      success: true,
+      message:
+        `${product.name} ${product.size} updated successfully.`,
 
-            const activityValues = [
-              "stock-updated",
-              productId,
-              product.name,
-              product.size,
-              soldQuantity,
-              newBalance,
-              `Sold ${soldQuantity} units of ${product.name} ${product.size}`,
-            ];
+      newBalance,
 
-            db.query(
-              activitySql,
-              activityValues,
-              (activityError, activityResult) => {
-                if (activityError) {
-                  return db.rollback(() => {
-                    res.status(500).json({
-                      success: false,
-                      message:
-                        "Unable to save the stock activity.",
-                      error: activityError.message,
-                    });
-                  });
-                }
-
-                db.commit((commitError) => {
-                  if (commitError) {
-                    return db.rollback(() => {
-                      res.status(500).json({
-                        success: false,
-                        message:
-                          "Unable to complete the stock update.",
-                        error: commitError.message,
-                      });
-                    });
-                  }
-
-                  return res.json({
-                    success: true,
-                    message: `${product.name} ${product.size} updated successfully.`,
-
-                    newBalance,
-
-                    activity: {
-                      id: activityResult.insertId,
-                      type: "stock-updated",
-                      productId,
-                      productName: product.name,
-                      size: product.size,
-                      quantity: soldQuantity,
-                      balance: newBalance,
-                      createdAt: new Date().toISOString(),
-                    },
-                  });
-                });
-              }
-            );
-          }
+      activity: {
+        id: activityResult.insertId,
+        type: "stock-updated",
+        productId,
+        productName: product.name,
+        size: product.size,
+        quantity: soldQuantity,
+        balance: newBalance,
+        createdAt: new Date().toISOString(),
+      },
+    });
+  } catch (error) {
+    if (connection) {
+      try {
+        await connection.rollback();
+      } catch (rollbackError) {
+        console.error(
+          "Stock update rollback failed:",
+          rollbackError.message
         );
       }
-    );
-  });
+    }
+
+    console.error("Stock update error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Unable to update stock.",
+      error: error.message,
+    });
+  } finally {
+    if (connection) {
+      connection.release();
+    }
+  }
 });
 
 /* =========================================================
    RESTOCK EXISTING PRODUCT
 ========================================================= */
 
-router.patch("/:id/restock", (req, res) => {
+router.patch("/:id/restock", async (req, res) => {
   const productId = Number(req.params.id);
 
   const {
@@ -482,175 +441,141 @@ router.patch("/:id/restock", (req, res) => {
     });
   }
 
-  db.beginTransaction((transactionError) => {
-    if (transactionError) {
-      return res.status(500).json({
+  let connection;
+
+  try {
+    connection = await db.promise().getConnection();
+
+    await connection.beginTransaction();
+
+    const [results] = await connection.query(
+      `
+        SELECT
+          id,
+          name,
+          size,
+          received,
+          balance
+        FROM products
+        WHERE id = ?
+        FOR UPDATE
+      `,
+      [productId]
+    );
+
+    if (results.length === 0) {
+      await connection.rollback();
+
+      return res.status(404).json({
         success: false,
-        message: "Unable to start restock transaction.",
-        error: transactionError.message,
+        message: "Product could not be found.",
       });
     }
 
-    const selectSql = `
-      SELECT
-        id,
-        name,
-        size,
-        received,
-        balance
-      FROM products
-      WHERE id = ?
-      FOR UPDATE
-    `;
+    const product = results[0];
 
-    db.query(
-      selectSql,
-      [productId],
-      (selectError, results) => {
-        if (selectError) {
-          return db.rollback(() => {
-            res.status(500).json({
-              success: false,
-              message: "Unable to find the product.",
-              error: selectError.message,
-            });
-          });
-        }
+    const newReceived =
+      Number(product.received || 0) + quantity;
 
-        if (results.length === 0) {
-          return db.rollback(() => {
-            res.status(404).json({
-              success: false,
-              message: "Product could not be found.",
-            });
-          });
-        }
+    const newBalance =
+      Number(product.balance || 0) + quantity;
 
-        const product = results[0];
+    await connection.query(
+      `
+        UPDATE products
+        SET
+          received = ?,
+          balance = ?,
+          invoice = ?,
+          expiry = ?,
+          unit_price = ?
+        WHERE id = ?
+      `,
+      [
+        newReceived,
+        newBalance,
+        invoiceNumber.trim(),
+        expiryDate,
+        price,
+        productId,
+      ]
+    );
 
-        const newReceived =
-          Number(product.received || 0) + quantity;
+    const [activityResult] = await connection.query(
+      `
+        INSERT INTO activities (
+          type,
+          product_id,
+          product_name,
+          size,
+          quantity,
+          balance,
+          message
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+      `,
+      [
+        "stock-restocked",
+        productId,
+        product.name,
+        product.size,
+        quantity,
+        newBalance,
+        `Restocked ${quantity} units of ${product.name} ${product.size}`,
+      ]
+    );
 
-        const newBalance =
-          Number(product.balance || 0) + quantity;
+    await connection.commit();
 
-        const updateSql = `
-          UPDATE products
-          SET
-            received = ?,
-            balance = ?,
-            invoice = ?,
-            expiry = ?,
-            unit_price = ?
-          WHERE id = ?
-        `;
+    return res.json({
+      success: true,
+      message:
+        `${product.name} ${product.size} restocked successfully.`,
 
-        const updateValues = [
-          newReceived,
-          newBalance,
-          invoiceNumber.trim(),
-          expiryDate,
-          price,
-          productId,
-        ];
+      product: {
+        id: productId,
+        received: newReceived,
+        balance: newBalance,
+        invoice: invoiceNumber.trim(),
+        expiry: expiryDate,
+        unitPrice: price,
+      },
 
-        db.query(
-          updateSql,
-          updateValues,
-          (updateError) => {
-            if (updateError) {
-              return db.rollback(() => {
-                res.status(500).json({
-                  success: false,
-                  message:
-                    "Unable to update the product stock.",
-                  error: updateError.message,
-                });
-              });
-            }
-
-            const activitySql = `
-              INSERT INTO activities (
-                type,
-                product_id,
-                product_name,
-                size,
-                quantity,
-                balance,
-                message
-              )
-              VALUES (?, ?, ?, ?, ?, ?, ?)
-            `;
-
-            const activityValues = [
-              "stock-restocked",
-              productId,
-              product.name,
-              product.size,
-              quantity,
-              newBalance,
-              `Restocked ${quantity} units of ${product.name} ${product.size}`,
-            ];
-
-            db.query(
-              activitySql,
-              activityValues,
-              (activityError, activityResult) => {
-                if (activityError) {
-                  return db.rollback(() => {
-                    res.status(500).json({
-                      success: false,
-                      message:
-                        "Unable to save the restock activity.",
-                      error: activityError.message,
-                    });
-                  });
-                }
-
-                db.commit((commitError) => {
-                  if (commitError) {
-                    return db.rollback(() => {
-                      res.status(500).json({
-                        success: false,
-                        message:
-                          "Unable to complete the restock.",
-                        error: commitError.message,
-                      });
-                    });
-                  }
-
-                  return res.json({
-                    success: true,
-                    message: `${product.name} ${product.size} restocked successfully.`,
-
-                    product: {
-                      id: productId,
-                      received: newReceived,
-                      balance: newBalance,
-                      invoice: invoiceNumber.trim(),
-                      expiry: expiryDate,
-                      unitPrice: price,
-                    },
-
-                    activity: {
-                      id: activityResult.insertId,
-                      type: "stock-restocked",
-                      productId,
-                      productName: product.name,
-                      size: product.size,
-                      quantity,
-                      balance: newBalance,
-                      createdAt: new Date().toISOString(),
-                    },
-                  });
-                });
-              }
-            );
-          }
+      activity: {
+        id: activityResult.insertId,
+        type: "stock-restocked",
+        productId,
+        productName: product.name,
+        size: product.size,
+        quantity,
+        balance: newBalance,
+        createdAt: new Date().toISOString(),
+      },
+    });
+  } catch (error) {
+    if (connection) {
+      try {
+        await connection.rollback();
+      } catch (rollbackError) {
+        console.error(
+          "Restock rollback failed:",
+          rollbackError.message
         );
       }
-    );
-  });
+    }
+
+    console.error("Restock error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Unable to restock product.",
+      error: error.message,
+    });
+  } finally {
+    if (connection) {
+      connection.release();
+    }
+  }
 });
 
 module.exports = router;
