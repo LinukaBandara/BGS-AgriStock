@@ -1,111 +1,153 @@
 # BGS AgriStock
 
-A full-stack agricultural inventory management system designed for fertilizer and agrochemical businesses.
+**BGS AgriStock** is a full-stack agricultural inventory management system built for **Balangoda Gowi Sewa**, an agricultural products business in Balangoda, Sri Lanka.
 
-BGS AgriStock replaces manual stock records with a centralized digital platform for managing products, monitoring inventory, recording stock movements, identifying low-stock items, and viewing business analytics.
+It replaces manual stock records with a centralized web application for managing agricultural products, tracking stock movements, monitoring low-stock items, maintaining inventory reports, and analyzing business activity.
 
-## Project Overview
+> Portfolio project focused on applying full-stack software engineering concepts to a real-world inventory management problem.
 
-BGS AgriStock was created for **Balangoda Gowi Sewa**, an agricultural products business based in Balangoda, Sri Lanka.
+## Highlights
 
-The system helps administrators manage fertilizers, insecticides, herbicides, fungicides, and other agricultural products through a modern and responsive web application.
+- 🔐 JWT authentication with bcrypt password hashing
+- 📦 Agricultural product and inventory management
+- 🔄 Sales and restocking workflows
+- 📊 Inventory dashboard and analytics
+- 📋 Searchable and filterable stock reports
+- ⚠️ Low-stock monitoring and inventory health indicators
+- 🧾 Invoice and expiry information tracking
+- 🗂️ Category and product-size organization
+- 🛡️ Protected frontend routes and backend API endpoints
+- 🗄️ MySQL database integration
+- 📱 Responsive web interface
 
-## Key Features
+## Screenshots
 
-### Public Website
+### Public Home
 
-- Modern agricultural business landing page
-- Responsive navigation
-- Platform and feature overview
-- Analytics showcase
-- About section
-- Contact section
-- Administrator login access
+![BGS AgriStock Home](docs/screenshots/home.png)
 
-### Secure Authentication
+### Administrator Login
+
+![BGS AgriStock Login](docs/screenshots/login.png)
+
+### Dashboard
+
+![BGS AgriStock Dashboard](docs/screenshots/dashboard.png)
+
+### Add Product / Stock
+
+![BGS AgriStock Add Product](docs/screenshots/add-product.png)
+
+### Update Stock
+
+![BGS AgriStock Update Stock](docs/screenshots/update-stock.png)
+
+### Stock Report
+
+![BGS AgriStock Stock Report](docs/screenshots/stock-report.png)
+
+### Analytics
+
+![BGS AgriStock Analytics](docs/screenshots/analytics.png)
+
+## Problem & Solution
+
+### The problem
+
+Agricultural retail businesses can rely heavily on manual records to track incoming stock, sales, remaining quantities and low-stock products. This makes it harder to identify inventory problems quickly and maintain a reliable view of current stock.
+
+### The solution
+
+BGS AgriStock provides a centralized inventory system where an administrator can:
+
+1. Add agricultural products and define minimum stock levels.
+2. Record stock received and products sold.
+3. Automatically update available quantities.
+4. Search and filter inventory through stock reports.
+5. Identify low-stock and out-of-stock products.
+6. Monitor inventory value and movement through analytics.
+
+## Core Features
+
+### Authentication
 
 - Administrator login
-- Password hashing with bcrypt
 - JWT-based authentication
+- bcrypt password hashing
 - Protected application routes
-- Session and local-storage support
-- Secure sign-out functionality
+- Protected API endpoints
+- Secure sign-out
 
-### Inventory Dashboard
+### Inventory Management
 
-- Total product count
-- Current stock value
-- Low-stock item count
-- Inventory movement growth
-- Inventory health indicator
-- Recent activity tracking
-- Low-stock product overview
-- Period-based analytics
-
-### Product Management
-
-- Add new agricultural products
+- Add agricultural products
 - Organize products by category
-- Manage multiple product sizes
-- Record invoice numbers
-- Record expiry dates
-- Set minimum stock levels
-- Prevent duplicate category, product, and size combinations
+- Support different product sizes
+- Store invoice numbers and expiry dates
+- Configure minimum stock levels
+- Prevent duplicate product/category/size combinations
 
-### Stock Management
+### Stock Operations
 
-- Record sold quantities
-- Automatically update available balances
+- Record sales
+- Validate available stock before selling
 - Restock existing products
 - Update invoice and expiry information
-- Validate available stock before sales
-- Maintain stock movement history
+- Automatically maintain available balances
+- Record stock movement activity
 
-### Stock Reports
+### Reporting
 
-- View complete inventory
-- Search products
-- Filter by category
-- Filter by stock status
-- View received and available quantities
-- Identify low-stock and out-of-stock products
+- Complete inventory overview
+- Product search
+- Category filtering
+- Stock-status filtering
+- Received and available quantity tracking
+- Low-stock and out-of-stock identification
 
 ### Analytics
 
 - Product distribution summaries
-- Stock value monitoring
-- Inventory movement statistics
+- Inventory value monitoring
+- Stock movement statistics
 - Category-level insights
-- Recent activity visualization
+- Recent activity tracking
+- Inventory health indicators
 
 ## Technology Stack
 
-### Frontend
+| Layer | Technology |
+| --- | --- |
+| Frontend | React 19, Vite |
+| Routing | React Router |
+| State | React Context API |
+| Backend | Node.js, Express 5 |
+| Database | MySQL |
+| Authentication | JWT |
+| Password Security | bcrypt |
+| Configuration | dotenv |
+| Styling | HTML5, CSS3 |
+| Development | VS Code, PowerShell, WAMP |
+| Version Control | Git, GitHub |
 
-- React
-- Vite
-- React Router
-- Context API
-- JavaScript
-- HTML5
-- CSS3
+## Architecture
 
-### Backend
+```text
+                    BGS AgriStock
+                          |
+              +-----------+-----------+
+              |                       |
+         React Frontend         Express API
+              |                       |
+              |                 JWT Authentication
+              |                       |
+              +---------- HTTP -------+
+                                      |
+                                      v
+                                    MySQL
+```
 
-- Node.js
-- Express.js
-- MySQL
-- JSON Web Tokens
-- bcrypt
-- dotenv
-
-### Development Tools
-
-- Visual Studio Code
-- PowerShell
-- WAMP Server
-- Git
-- GitHub
+The frontend handles the user interface, navigation, authentication state and inventory views. The Express backend exposes protected API endpoints and coordinates database operations. MySQL provides persistent storage for products, users and activity data.
 
 ## Project Structure
 
@@ -127,15 +169,10 @@ BGS-AgriStock/
 │   └── package.json
 │
 ├── public/
-│   ├── favicon.svg
-│   └── icons.svg
-│
 ├── src/
 │   ├── assets/
 │   ├── components/
-│   │   └── home/
 │   ├── context/
-│   │   └── InventoryContext.jsx
 │   ├── pages/
 │   │   ├── AddProduct.jsx
 │   │   ├── Analytics.jsx
@@ -145,11 +182,12 @@ BGS-AgriStock/
 │   │   ├── StockReport.jsx
 │   │   └── UpdateStock.jsx
 │   ├── services/
-│   │   └── api.js
 │   ├── utils/
-│   │   └── auth.js
 │   ├── App.jsx
 │   └── main.jsx
+│
+├── docs/
+│   └── screenshots/
 │
 ├── .gitignore
 ├── index.html
@@ -157,157 +195,19 @@ BGS-AgriStock/
 └── vite.config.js
 ```
 
-## Installation
-
-### Prerequisites
-
-Install the following software before running the project:
-
-- Node.js
-- npm
-- MySQL or WAMP Server
-- Git
-
-### 1. Clone the repository
-
-```bash
-git clone https://github.com/linuka7/BGS-AgriStock.git
-```
-
-Move into the project directory:
-
-```bash
-cd BGS-AgriStock
-```
-
-### 2. Install frontend dependencies
-
-```bash
-npm install
-```
-
-### 3. Install backend dependencies
-
-```bash
-cd backend
-npm install
-```
-
-## Database Setup
-
-1. Start MySQL using WAMP Server or another MySQL service.
-2. Open phpMyAdmin or MySQL Workbench.
-3. Create a database named:
-
-```sql
-bgs_agristock
-```
-
-4. Import the following file:
-
-```text
-backend/schema.sql
-```
-
-5. Optionally run the seed script to insert sample data:
-
-```bash
-node seed.js
-```
-
-## Environment Configuration
-
-Environment files are excluded from GitHub for security.
-
-### Backend environment file
-
-Create:
-
-```text
-backend/.env
-```
-
-Add:
-
-```env
-PORT=5000
-
-DB_HOST=localhost
-DB_USER=root
-DB_PASSWORD=
-DB_NAME=bgs_agristock
-
-JWT_SECRET=replace_with_a_long_secure_random_secret
-
-ADMIN_NAME=Administrator
-ADMIN_EMAIL=admin@example.com
-ADMIN_PASSWORD=replace_with_a_secure_password
-```
-
-Never commit real passwords or secret keys to GitHub.
-
-### Frontend environment file
-
-Create a `.env` file in the project root:
-
-```env
-VITE_API_URL=http://localhost:5000/api
-```
-
-## Create the Administrator Account
-
-From the backend directory, run:
-
-```bash
-node createAdmin.js
-```
-
-The administrator details are taken from the variables inside `backend/.env`.
-
-## Running the Application
-
-Two terminal windows are required.
-
-### Start the backend
-
-```bash
-cd backend
-node index.js
-```
-
-The backend runs at:
-
-```text
-http://localhost:5000
-```
-
-### Start the frontend
-
-From the main project directory:
-
-```bash
-npm run dev
-```
-
-The frontend normally runs at:
-
-```text
-http://localhost:5173
-```
-
 ## Application Routes
 
 ```text
-/                 Public landing page
+/                 Public home page
 /login            Administrator login
 /dashboard        Inventory dashboard
 /update-stock     Record product sales
 /stock-report     View and filter inventory
 /add-product      Add new products
-/analytics        View inventory analytics
+/analytics        Inventory analytics
 ```
 
-Protected routes require a valid administrator login.
+Protected application routes require administrator authentication.
 
 ## API Overview
 
@@ -320,73 +220,142 @@ PATCH  /api/products/:id/restock
 GET    /api/activities
 ```
 
-Protected API endpoints require a JWT bearer token.
+Protected API endpoints require a valid JWT bearer token.
 
-## Screenshots
+## Local Development
 
-### Landing Page
+### Prerequisites
 
-![BGS AgriStock Landing Page](docs/screenshots/landing-page.png)
+- Node.js
+- npm
+- MySQL or WAMP Server
+- Git
 
-Additional application screenshots will be added for the dashboard, stock management, reporting, and analytics pages.
+### Clone the repository
+
+```bash
+git clone https://github.com/linuka7/BGS-AgriStock.git
+cd BGS-AgriStock
+```
+
+### Install frontend dependencies
+
+```bash
+npm install
+```
+
+### Install backend dependencies
+
+```bash
+cd backend
+npm install
+```
+
+## Database Setup
+
+1. Start MySQL using WAMP Server or another MySQL service.
+2. Open phpMyAdmin or MySQL Workbench.
+3. Create a database named `bgs_agristock`.
+4. Import `backend/schema.sql`.
+5. Optionally run the seed script:
+
+```bash
+node seed.js
+```
+
+## Environment Configuration
+
+Environment files are excluded from GitHub.
+
+Create `backend/.env`:
+
+```env
+PORT=5000
+DB_HOST=localhost
+DB_USER=root
+DB_PASSWORD=
+DB_NAME=bgs_agristock
+JWT_SECRET=replace_with_a_long_secure_random_secret
+ADMIN_NAME=Administrator
+ADMIN_EMAIL=admin@example.com
+ADMIN_PASSWORD=replace_with_a_secure_password
+```
+
+Create `.env` in the project root:
+
+```env
+VITE_API_URL=http://localhost:5000/api
+```
+
+Never commit real credentials, passwords or JWT secrets.
+
+## Run the Application
+
+Start the backend in one terminal:
+
+```bash
+cd backend
+node index.js
+```
+
+The API runs at:
+
+```text
+http://localhost:5000
+```
+
+Start the frontend from the project root in another terminal:
+
+```bash
+npm run dev
+```
+
+The Vite development server normally runs at:
+
+```text
+http://localhost:5173
+```
 
 ## Security
 
-- Passwords are hashed before database storage.
-- Authentication is handled using JSON Web Tokens.
-- Protected frontend routes require a valid session.
-- Protected backend routes require a valid bearer token.
-- Environment variables and credentials are excluded through `.gitignore`.
-- Duplicate products are restricted at the database level.
-
-## Future Improvements
-
-- Multiple administrator and employee accounts
-- Role-based permissions
-- Supplier management
-- Sales invoice generation
-- Product barcode scanning
-- Email and SMS low-stock notifications
-- Data export to PDF and Excel
-- Cloud deployment
-- Automated database backups
-- Mobile application support
+- Passwords are hashed before storage.
+- Authentication uses signed JWT access tokens.
+- Protected frontend routes require an authenticated session.
+- Protected backend routes require a bearer token.
+- Environment files are excluded through `.gitignore`.
+- Duplicate product combinations are restricted at the database level.
 
 ## Project Status
 
-The core full-stack application is complete and operational in the local development environment.
+**Core application complete.**
 
-Current development status:
+The current repository contains the main full-stack inventory workflow including authentication, product management, stock sales, restocking, reporting, analytics and MySQL persistence.
 
-- Public landing page complete
-- Authentication complete
-- Product management complete
-- Sales recording complete
-- Product restocking complete
-- Stock reporting complete
-- Analytics complete
-- MySQL integration complete
-- GitHub repository configured
+A temporary hosted demonstration may be available during development. The production hosting arrangement is intentionally not treated as a permanent portfolio dependency and can be updated later without changing the application itself.
+
+## Future Improvements
+
+- Multiple employee accounts
+- Role-based permissions
+- Supplier management
+- Sales invoice generation
+- Barcode scanning
+- Email/SMS low-stock notifications
+- PDF and Excel exports
+- Automated database backups
+- Mobile application support
 
 ## Author
 
-**Linuka Bandara**
+**Linuka Bandara**  
+Higher Diploma in Computing and Software Engineering
 
-Higher Diploma in Computing and Software Engineering  
-Software Engineering Student
-
-GitHub:
-
-```text
-https://github.com/linuka7
-```
+GitHub: https://github.com/linuka7
 
 ## Repository
 
-```text
 https://github.com/linuka7/BGS-AgriStock
-```
 
 ## Notice
 
-This project was developed as an educational, portfolio, and real-business inventory management solution.
+Developed as an educational, portfolio and real-business inventory management solution for agricultural retail operations.
