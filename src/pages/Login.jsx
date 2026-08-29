@@ -2,6 +2,8 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { loginUser } from "../services/api";
 import "./Login.css";
+const DEMO_MODE =
+  import.meta.env.VITE_DEMO_MODE === "true";
 
 function Login() {
   const navigate = useNavigate();
@@ -227,6 +229,26 @@ navigate("/dashboard", {
 
         <div className="login-card">
           <div className="login-card-header">
+
+          {DEMO_MODE && (
+  <div
+    style={{
+      marginBottom: "20px",
+      padding: "12px 14px",
+      borderRadius: "12px",
+      background: "rgba(6, 95, 70, 0.08)",
+      border: "1px solid rgba(6, 95, 70, 0.16)",
+      color: "#065F46",
+      fontSize: "13px",
+      lineHeight: 1.5,
+    }}
+  >
+    <strong>Interactive Demo</strong>
+    <br />
+    Use <strong>demo@bgsagristock.com</strong> and{" "}
+    <strong>demo123</strong> to explore the system.
+  </div>
+)}
             <span className="login-card-tag">
               SECURE ACCESS
             </span>
