@@ -20,7 +20,18 @@ It replaces manual stock records with a centralized web application for managing
 - 🗄️ MySQL database integration
 - 📱 Responsive web interface
 
+ HEAD
 ## Screenshots
+
+## Live Demo
+
+[**BGS AgriStock Live Website**](https://bgs-frontend-production.up.railway.app)
+
+**Backend API:**  
+[https://bgs-agristock-production.up.railway.app](https://bgs-agristock-production.up.railway.app)
+
+## Key Features
+ bfa10eb (docs: add live demo links)
 
 ### Public Home
 
